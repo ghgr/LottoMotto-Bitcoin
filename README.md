@@ -17,4 +17,7 @@ The project is composed of two parts:
 There is a Gateway address. This address is ignored in the web frontend, and is used to add/remove funds from the lotto address (and don't confuse the user, making them think it was a player)
 
 
+The code is not yet finished (but almost). I still need to implement what to do when the pot is given (i.e, if stop the game, or make a new one with 0.9*previous_pot, etc.).
+
+
 Donations: 1GhgraoJ3LqpMF9CDEc1UL3q5EkXZyUdHH
