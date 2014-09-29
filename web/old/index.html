@@ -1,0 +1,147 @@
+<html>
+<head> 
+	<title> Test </title>
+
+	<style> 
+		@font-face 
+		{
+		font-family: 'Cabin Sketch';
+		font-style: normal;
+		font-weight: 700;
+		src: local('CabinSketch-Bold.ttf'), local('CabinSketch-Bold'), url("font/CabinSketch-Bold.ttf") format('truetype');
+		}
+
+		@font-face
+                {
+                font-family: 'MRB';
+                font-style: normal;
+                font-weight: 700;
+                src: local('MRB.ttf'), local('MRB'), url("font/MRB.ttf") format('truetype');
+                }
+
+		h1
+		{
+			font-family: "Cabin Sketch";
+			font-size:70;
+		}
+
+                .info
+                {
+			font-family: "Cabin Sketch";
+                        font-size:40;
+                }
+	
+	</style>
+
+</head>
+<body>
+
+	<script src="js/moment.js"></script>
+	<script src="js/jquery-1.10.1.min.js"></script>
+	<script> 
+	$( document ).ready(function() {
+	
+		var lim_confirmations=2;
+		var address="1LuckyR1fFHEsXYyx5QK4UFzv3PEAepPMK";
+		address="1NysmZC2Pw6LbxoAb28C7jqzW5MJrt7B3Z";
+//		var last_tx_url="http://www.corsproxy.com/blockchain.info/address/"+address+"?format=json&limit=10&filter=2";
+                var last_tx_url="https://www.blockchain.info/address/"+address+"?format=json&limit=10&filter=2&cors=true";
+//		var last_tx_url="json/last_tx.json";
+
+
+//		var last_block_url="https://api.biteasy.com/blockchain/v1/blocks?per_page=1";
+		var last_block_url = "json/last_block.json";
+
+		var last_block;
+
+		if (lim_confirmations==1)
+		{
+			document.getElementById('lim_confirmations').innerHTML="1 confirmation";
+		}else
+		{
+			document.getElementById('lim_confirmations').innerHTML=lim_confirmations+" confirmations";
+		}
+
+		$.getJSON( last_block_url, function( data )
+                {
+			last_block=data["data"]["blocks"][0]["height"];
+		});
+
+
+		$.getJSON( last_tx_url, function( data )
+		{	
+			console.dir(data);
+                        var n_tx=data["txs"].length;
+			for (i=0;i<Math.min(n_tx,10);i++)
+			{
+
+				var last_tx_timestamp=undefined;
+	                        var last_tx_block=undefined;
+	                        var last_tx_address=undefined;
+        	                var confirmations=undefined;
+
+
+				last_tx_timestamp=data["txs"][i]["time"];
+				last_tx_block = data["txs"][i]["block_height"];
+				last_tx_address=data["txs"][i]["inputs"][0]["prev_out"]["addr"];
+				console.log(last_block+","+last_tx_block);
+				if (last_tx_block!=undefined)
+				{
+					confirmations=last_block-last_tx_block;
+				}else
+				{
+					confirmations=0;
+				}
+			
+				var duration = moment.duration(last_tx_timestamp*1000-new Date().getTime(),"milliseconds");
+
+
+				document.getElementById('last_tx_timestamp').innerHTML+=duration.humanize(true)+"<br/>";
+
+
+				document.getElementById('last_tx_address').innerHTML+=last_tx_address.substring(0,20)+"..."+"<br/>";	
+		
+				if (last_tx_block==undefined)
+				{
+					document.getElementById('last_tx_block').innerHTML+=""+"<br/>";
+				}else
+				{
+					document.getElementById('last_tx_block').innerHTML+="(block "+last_tx_block+")"+"<br/>";
+				}
+				
+				if (confirmations==1)
+				{
+					document.getElementById('confirmations').innerHTML+="1 confirmation"+"<br/>";
+				}else 
+				{
+					document.getElementById('confirmations').innerHTML+=confirmations+" confirmations"+"<br/>";
+				}
+				
+        		}
+		});
+
+
+
+
+	});
+	</script>
+
+
+	<h1> Aqui va el titulo </h1>
+
+	<br/><br/><br/>
+
+	<div class="info">
+
+	<br/>
+	The bounty will be given to the last address when it reaches <a id="lim_confirmations"></a>.<br/>	
+	Currently the last address has <a id="confirmations"></a> <a id="last_tx_block"></a>.<br/>
+	
+	It was seen by blockchain.info <a id="last_tx_timestamp"><a/>.<br/>
+	<br/>
+	Current last address is <a id="last_tx_address"><a/><br/>
+	</div>
+	<br/>
+	
+</body>
+</html>

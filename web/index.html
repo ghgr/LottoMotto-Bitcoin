@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test</title>
+
+    <META NAME="Description" CONTENT="LottoMotto">
+
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"><link rel="stylesheet" href="Resources/bootstrap.min.css"><link rel="stylesheet" href="Resources/bootstrap-responsive.min.css"><link rel="stylesheet" href="Resources/overrides.min.css?8910f51b3969a1f3"><script src="Resources/wallet/jquery.min.js" type="text/javascript"></script><script type="text/javascript" src="Resources/wallet/bootstrap.min.js"></script><script src="Resources/wallet/shared.min.js?8910f51b3969a1f3" type="text/javascript"></script><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+    <script type="text/javascript" src="js/qrcode.min.js"></script>
+    <script type="text/javascript" src="Resources/wallet/address_page.min.js"></script>
+
+</head>
+<body> 
+
+
+    <div class="navbar" style="height:40px;overflow:visible">
+        <div class="navbar-inner" style="height:43px;">
+            <div class="container">
+                <div class="logo hidden-phone hidden-tablet">
+			<a href="/">
+			<!-- <img border="0" src="Resources/logo.png" alt="Bitcoin block explorer and currency statistics"/> -->
+			</a>
+		</div>
+
+
+                
+                
+            </div>
+        </div>
+    </div>
+
+<div class="container">
+<h3 style="display:inline">
+LottoMotto is an alternative lotto for Bitcoin with expectancy up to 100%+! <br/> Rules are easy as 1,2,3:
+<ol>
+ <li>Send <q id="ticket_price"></q> BTC to <q id="lotto_address2"></q> </li>
+ <li>There's no step 2.</li>
+</ol>
+Now, if there are no more incoming transactions for <q id="lim_confirmations2"></q> confirmations, you win the bounty! Simple, huh?
+<br/><small>
+DISCLAIMER: In the Bitcoin protocol, transactions inside a block are unordered. We 'sort' the transactions based on the timestamp when Blockchain.info 'sees' the transaction. We are NOT affiliate with Blockchain.info. In case Blockchain.info's API went offline, the game will continue once Blockchain.info resumes activity.
+</small>
+</h3>
+<br/><br/>
+       <div class="row-fluid">
+        <div class="span5">
+            <table class="table table-striped">
+                <tr>
+                    <th colspan="2">Summary</th>
+                </tr>
+                <tr>
+                    <td>Lotto address</td>
+                    <td><q id="lotto_address"></q></td>
+                </tr>
+                <tr>
+                    <td>Bounty</td>
+                    <td>
+                        <b><q id="bounty"> </q> BTC </b>
+                    </td>
+                </tr>
+
+                <tr class="visible-desktop">
+                    <td>Current winner</td>
+                    <td>
+				<q id="current_winner"></q>
+				<small>This address will win the bounty if it reaches <u id="lim_confirmations"></u> before any other arrives.</small>
+
+		   </td>
+                </tr>
+                
+                <tr>
+                    <td>Confirmations</td>
+                    <td>
+			<q id="tx_confirmations"></q>	
+		    </td>
+                </tr>
+
+
+            </table>
+        </div>
+	<div class="span4" style="overflow:visible;">
+	 <div class="span3" align="center">
+          <q id="qrcode"> </q>
+        </div> </div>
+</div>
+
+
+<table border="0" cellpadding="20" cellspacing="20"><tr><td>
+    <div style="clear:both; width:100%; padding-top:20px;">
+            <h3 style="display:inline">Last players</h3>
+    </div>
+    <div id="tx_container" style="width:100%;clear:both">
+        <q id="transaction_list_received"></q>
+    </div>
+
+</td><td>
+    <div style="clear:both; width:100%; padding-top:20px;">
+            <h3 style="display:inline">Previous Winners</h3>
+    </div>
+    <div id="tx_container" style="width:100%;clear:both">
+        <q id="transaction_list_sent"></q>
+    </div> 
+</td></tr></table>
+
+ </div>
+
+
+
+  
+
+</div>
+
+
+	<script src="js/moment.js"></script>
+	<script src="js/jquery-1.10.1.min.js"></script>
+	<script>
+		function capitaliseFirstLetter(string)
+		{
+    			return string.charAt(0).toUpperCase() + string.slice(1);
+		} 
+	$( document ).ready(function() {
+		var lotto_address = "1dice8EMZmqKvrGE4Qc9bUFf9PX3xaYDp";
+		var gateway_address = "1H467KmLuo5CJkmkaAwXCQYUSmn2wdTvze"; // Transactions to/from this address will not be shown (they are for administration, like increaing the bounty, etc.)
+
+		var lim_confirmations=3;
+		var ticket_price = 0.01;
+		var bounty = 10;
+
+//		var txs_received_url="http://www.corsproxy.com/blockchain.info/address/"+lotto_address+"?format=json&limit=10&filter=2";
+		var txs_received_url="json/txs_received.json";
+
+//                var txs_sent_url="http://www.corsproxy.com/blockchain.info/address/"+lotto_address+"?format=json&limit=10&filter=1";
+		var txs_sent_url="json/txs_sent.json";
+
+//		var last_block_url="https://api.biteasy.com/blockchain/v1/blocks?per_page=1";
+		var last_block_url = "json/last_block.json";
+
+		var last_block;
+
+		document.getElementById('ticket_price').innerHTML=ticket_price;
+                document.getElementById('lotto_address').innerHTML="<a href='bitcoin:"+lotto_address+"'>"+lotto_address+"</a>";
+                document.getElementById('lotto_address2').innerHTML=lotto_address;
+                document.getElementById('lim_confirmations2').innerHTML=lim_confirmations;
+                document.getElementById('bounty').innerHTML=bounty;
+
+		if (lim_confirmations==1)
+		{
+			document.getElementById('lim_confirmations').innerHTML="1 confirmation";
+		}else
+		{
+			document.getElementById('lim_confirmations').innerHTML=lim_confirmations+" confirmations";
+		}
+
+		$.getJSON( last_block_url, function( data )
+                {
+			last_block=data["data"]["blocks"][0]["height"];
+		});
+
+
+		$.getJSON( txs_received_url, function( data )
+		{
+			parseTransactions(data,isReceive=true);
+		});
+
+		$.getJSON( txs_sent_url, function( data )
+                {
+                        parseTransactions(data,isReceive=false);
+                });
+
+		function parseTransactions(data,isReceive=true)
+		{	
+                        var n_tx=data["txs"].length;
+ 
+			for (i=0;i<Math.min(n_tx,10);i++)
+			{
+
+				var tx_timestamp=undefined;
+	                        var tx_block=undefined;
+	                        var tx_address=undefined;
+        	                var tx_hash = undefined;
+				var confirmations=undefined;
+
+				tx_timestamp=data["txs"][i]["time"];
+                                var duration = moment.duration(tx_timestamp*1000-new Date().getTime(),"milliseconds");
+
+				tx_block = data["txs"][i]["block_height"];
+                                tx_hash = data["txs"][i]["hash"];
+				tx_address=data["txs"][i]["inputs"][0]["prev_out"]["addr"];
+				if (tx_block!=undefined)
+				{
+					confirmations=last_block-tx_block+1;
+				}else
+				{
+					confirmations=0;
+				}
+
+				if (i==0 && isReceive)
+				{	
+					if(confirmations>=lim_confirmations)
+					{
+						document.getElementById('current_winner').innerHTML="No one yet. It can be YOU!"; 
+					}else
+					{
+						document.getElementById('current_winner').innerHTML=data["txs"][0]["inputs"][0]["prev_out"]["addr"].substring(0,20)+"...";
+					}
+				}
+				
+				var receivedSent="sent";
+				var received_address=data["txs"][i]["out"][0]["addr"].substring(0,20)+"...";
+				var sent_address=lotto_address;
+				var received_address_full=data["txs"][i]["out"][0]["addr"];
+				if (isReceive) 
+				{ 
+					document.getElementById('tx_confirmations').innerHTML=last_block-data["txs"][0]["block_height"]+1;
+					receivedSent="received"; 
+					received_address=lotto_address;
+					sent_address=tx_address.substring(0,20)+"...";
+				}
+	
+				if (data["txs"][i]["out"][0]["addr"]==gateway_address)
+				{
+					received_address="<i>"+received_address+"(GATEWAY)</i>";
+				}
+				if (tx_address==gateway_address)
+				{
+					sent_address="<i>"+sent_address+"(GATEWAY)</i>";
+				}
+
+				document.getElementById('transaction_list_'+receivedSent).innerHTML+=newTransaction(
+					tx_hash,
+					capitaliseFirstLetter(duration.humanize(true)),
+					sent_address,
+					getArrowColor(confirmations),  // Arrow
+					received_address,
+					getSumOutputs(data["txs"][i],received_address_full)+'BTC',
+					confirmations+" confirmations",
+					getButtonColor(confirmations) // btn-primary (blue), btn-warning (orange), btn-danger (red), btn-success (green), btn-inverse (black)
+					);
+
+
+        		}
+		}
+
+                function getArrowColor(cnf)
+                {
+                        if (cnf==0) { return 'red'; }
+                        return 'green';
+                }
+
+
+		function getButtonColor(cnf)
+		{
+			if (cnf==0) { return 'btn-danger'; }
+			return 'btn-success';
+		}
+		
+		function newTransaction(hash,timestamp,origin,arrow,destination,amount,confirmations,button)
+		{
+			var data ="<!-- Repeat from here... -->  <div id='tx-64929944' class='txdiv'> <table class='table table-striped' cellpadding='0' cellspacing='0' style='padding:0px;float:left;margin:0px;width:100%'> <tr> <th colspan='3' align='left'> <a class='hash-link' href='https://blockchain.info/tx/"+hash+"'> "+hash+" </a>  <span class='pull-right'>"+timestamp+" </span></th></tr><tr> <td width='500px' class='txtd hidden-phone'>"+origin+"<br /> </td><td width='48px' class='hidden-phone' style='padding:4px;text-align:center;vertical-align:middle;'>  <img src='Resources/arrow_right_"+arrow+".png' /> </td><td class='txtd'>"+destination+"<span class='pull-right hidden-phone'> <span data-c='100000'>"+amount+"</span></span><br /></td></tr></table><div style='padding-bottom:30px;width:100%;text-align:right;clear:both'> <button class='btn "+button+"'>"+confirmations+"</button>  </div></div> <!-- To here...-->";
+			return data;
+		}
+		
+		function getSumOutputs(tx,address)
+		{
+			var total=0;
+			for (var i=0;i<tx["out"].length;i++)
+			{
+				if (tx["out"][i]["addr"]==address) { total+=tx["out"][i]["value"];}
+			}
+			total*=1e-6;
+			total = Math.floor(total)/100; // If someone sends 0.005 it should not be rounded to 0.01!	
+			return total.toFixed(2);
+		}
+
+		new QRCode(document.getElementById("qrcode"), lotto_address);
+
+	});
+	</script>
+
+
+	
+</body>
+</html>
