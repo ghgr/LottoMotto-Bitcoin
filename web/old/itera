@@ -1,3 +1,0 @@
-while read p; do
-  wget -x https://blockchain.info/$p
-done < l
